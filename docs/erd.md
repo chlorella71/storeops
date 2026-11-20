@@ -169,6 +169,36 @@ erDiagram
 - 특정 날짜의 근무 변경은 ShiftAssignment에서 처리한다.
 - 반복 패턴이 수정되어도 이미 저장된 근무 배정은 자동 변경하지 않는다.
 
+### 2.5 Schedule (월간 근무표)
+
+매장의 연도별, 월별 근무표를 관리한다.
+
+| 컬럼 | 자료형 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 근무표 고유 식별자 |
+| year | SMALLINT | NOT NULL | 근무표 연도 |
+| month | SMALLINT | NOT NULL | 근무표 월 (1~12) |
+| created_at | TIMESTAMP | NOT NULL | 생성 일시 |
+| updated_at | TIMESTAMP | NOT NULL | 수정 일시 |
+
+#### 관계 및 제약조건
+
+- id를 기본키로 사용한다.
+- (year, month)에 UNIQUE 제약조건을 적용한다.
+- month는 1부터 12까지의 값만 허용한다.
+- 하나의 Schedule은 여러 ShiftAssignment를 가질 수 있다.
+- 하나의 ShiftAssignment는 반드시 하나의 Schedule에 속한다.
+
+#### 설계 원칙
+
+- 초기 MVP는 단일 매장을 기준으로 연도와 월마다 하나의 근무표만 생성한다.
+- 근무표는 연도와 월을 기준으로 조회한다.
+- 동일한 연도와 월의 근무표를 중복 생성할 수 없다.
+- 근무표 생성 시 유효한 RecurringSchedule을 참조하여 근무 배정 초안을 생성할 수 있다.
+- 실제 직원별 근무 배정은 ShiftAssignment에서 관리한다.
+- 근무표의 직원별 배정이 수정되면 updated_at을 갱신한다.
+- 다중 매장 지원 시 매장 식별자를 추가하고 UNIQUE 제약조건을 재검토한다.
+
 ## 3. 설계 검토 사항
 
 ### 3.1 확정 사항
