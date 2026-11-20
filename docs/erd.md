@@ -134,6 +134,41 @@ erDiagram
 - 근무 유형이 지정된 배정은 직원별 근무 가능 여부를 검증한다.
 - 비활성화된 근무 유형은 신규 배정에서 제외한다.
 
+### 2.4 RecurringSchedule (반복 근무 패턴)
+
+직원의 요일별 고정 근무 패턴과 적용 기간을 관리한다.
+
+| 컬럼 | 자료형 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 반복 근무 패턴 식별자 |
+| employee_id | BIGINT | FK, NOT NULL | 직원 식별자 |
+| day_of_week | SMALLINT | NOT NULL | 요일 (1=월요일 ~ 7=일요일) |
+| shift_type_id | BIGINT | FK, NULL 허용 | 근무 유형 식별자 |
+| start_time | TIME | NOT NULL | 근무 시작 시각 |
+| end_time | TIME | NOT NULL | 근무 종료 시각 |
+| effective_from | DATE | NOT NULL | 적용 시작일 |
+| effective_to | DATE | NULL 허용 | 적용 종료일 |
+
+#### 관계 및 제약조건
+
+- employee_id는 Employee.id를 참조한다.
+- shift_type_id는 ShiftType.id를 참조한다.
+- day_of_week는 1부터 7까지의 값만 허용한다.
+- effective_to가 존재하면 effective_from 이상이어야 한다.
+- 동일 직원의 동일 요일에 적용 기간이 겹치는 반복 패턴은 허용하지 않는다.
+
+#### 설계 원칙
+
+- 반복 근무 패턴은 요일을 기준으로 적용한다.
+- 근무 유형 없이 시작 및 종료 시각을 직접 지정할 수 있다.
+- 근무 유형을 지정하더라도 패턴의 시작 및 종료 시각은 별도로 저장한다.
+- 종료 시각이 시작 시각보다 이르면 익일 종료로 해석한다.
+- 적용 시작일과 종료일은 모두 적용 기간에 포함한다.
+- 월간 근무표 생성 시 해당 날짜에 유효한 반복 패턴을 적용한다.
+- 반복 패턴은 실제 근무 배정과 별도로 관리한다.
+- 특정 날짜의 근무 변경은 ShiftAssignment에서 처리한다.
+- 반복 패턴이 수정되어도 이미 저장된 근무 배정은 자동 변경하지 않는다.
+
 ## 3. 설계 검토 사항
 
 ### 3.1 확정 사항
