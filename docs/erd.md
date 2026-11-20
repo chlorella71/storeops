@@ -199,6 +199,57 @@ erDiagram
 - 근무표의 직원별 배정이 수정되면 updated_at을 갱신한다.
 - 다중 매장 지원 시 매장 식별자를 추가하고 UNIQUE 제약조건을 재검토한다.
 
+### 2.6 ShiftAssignment (근무 배정)
+
+월간 근무표에 포함된 직원별 실제 근무 배정과 휴무 정보를 관리한다.
+
+| 컬럼 | 자료형 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 근무 배정 식별자 |
+| schedule_id | BIGINT | FK, NOT NULL | 월간 근무표 식별자 |
+| employee_id | BIGINT | FK, NOT NULL | 직원 식별자 |
+| shift_type_id | BIGINT | FK, NULL 허용 | 근무 유형 식별자 |
+| work_date | DATE | NOT NULL | 근무 시작 기준 날짜 |
+| status | VARCHAR(10) | NOT NULL | 근무 상태 (WORK, OFF) |
+| start_at | TIMESTAMP | NULL 허용 | 실제 근무 시작 일시 |
+| end_at | TIMESTAMP | NULL 허용 | 실제 근무 종료 일시 |
+| break_minutes | INTEGER | NULL 허용 | 휴게시간 (분) |
+| created_at | TIMESTAMP | NOT NULL | 등록 일시 |
+| updated_at | TIMESTAMP | NOT NULL | 수정 일시 |
+
+#### 관계 및 제약조건
+
+- schedule_id는 Schedule.id를 참조한다.
+- employee_id는 Employee.id를 참조한다.
+- shift_type_id는 ShiftType.id를 참조한다.
+- (employee_id, work_date)에 UNIQUE 제약조건을 적용한다.
+- status는 WORK 또는 OFF만 허용한다.
+- status가 WORK이면 start_at, end_at, break_minutes는 필수이다.
+- status가 OFF이면 shift_type_id, start_at, end_at, break_minutes는 NULL이어야 한다.
+- WORK 상태에서는 end_at이 start_at보다 늦어야 한다.
+- break_minutes는 0 이상이어야 하며 전체 배정시간보다 작아야 한다.
+- status가 WORK이면 work_date는 start_at의 날짜와 일치해야 한다.
+- work_date는 연결된 Schedule의 연도 및 월에 속해야 한다.
+
+#### 근무 상태
+
+- WORK: 실제 근무가 배정된 상태
+- OFF: 휴무로 지정된 상태
+- 미배정: 해당 직원과 날짜에 ShiftAssignment 데이터가 없는 상태
+
+#### 설계 원칙
+
+- 직원 1명은 동일 근무 시작 날짜에 최대 1개의 배정만 가질 수 있다.
+- 실제 근무 시작 및 종료 일시는 ShiftAssignment에 저장한다.
+- 야간 근무는 날짜가 변경되는 종료 일시를 그대로 저장한다.
+- 근무 유형이 지정되지 않은 자유 근무도 허용한다.
+- 근무 유형의 기본 시간이 변경되어도 기존 배정의 실제 근무시간은 유지한다.
+- 휴게시간은 근무시간 및 직원 역할에 따라 계산하여 저장한다.
+- 근무시간이나 직원 역할이 변경되면 휴게시간을 재검토한다.
+- 근무시간이 겹치는 배정은 별도로 검증한다.
+- 반복 근무 패턴으로 생성된 배정도 이후 개별 수정할 수 있다.
+- 근무 배정이 변경되면 해당 Schedule의 updated_at도 갱신한다.
+
 ## 3. 설계 검토 사항
 
 ### 3.1 확정 사항
